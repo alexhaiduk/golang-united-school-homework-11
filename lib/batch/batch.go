@@ -17,31 +17,18 @@ func getOne(id int64) user {
 func getBatch(n int64, pool int64) (res []user) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	//ch := make(chan []user, pool)
+	ch := make(chan user, pool)
 	res = make([]user, 0, n)
-	//wg.Add(int(pool))
 	for i := 0; i < int(n); i++ {
-		wg.Add(int(pool))
-		//go func(j int64) {
+		wg.Add(1)
+		ch <- getOne(int64(i))
 		go func() {
-			defer wg.Done()
 			mu.Lock()
-			//tmp := getOne(j)
-			//res = append(res, tmp)
-			res = append(res, getOne(int64(i)))
-			//res = append(res, getOne(j))
-			//ch <- append(res, getOne(int64(j)))
-			//ch <- res
-			mu.Unlock()
-			//ch <- res
-			//}(int64(i))
-			//ch <- res
+			defer mu.Unlock()
+			res = append(res, <-ch)
+			wg.Done()
 		}()
-		//wg.Done()
 	}
 	wg.Wait()
-	//return <-ch
-	//res = <-ch
-	//return res
 	return res
 }
